@@ -1,0 +1,14 @@
+[project]
+name = "secure-journal"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["cryptography"]
+
+[project.scripts]
+secure-journal = "secure_journal.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
