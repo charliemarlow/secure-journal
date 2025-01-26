@@ -2,6 +2,7 @@
 
 CLI tool for encrypted journaling
 
+Requires emacs to be installed.
 Requires Ollama with deepseek-r1 to be running locally.
 
 ## Installation
