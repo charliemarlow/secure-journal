@@ -19,6 +19,11 @@ build-backend = "hatchling.build"
 readme = "README.md"
 license = { text = "MIT" }
 
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.0",
+]
+
 [tool.ruff]
 # Enable all rules by default
 select = ["ALL"]
