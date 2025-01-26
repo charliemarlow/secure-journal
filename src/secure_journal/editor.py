@@ -25,7 +25,11 @@ class Editor:
             time.sleep(1)
 
     def open_buffer(self, initial_content: str | None) -> str:
-        escaped_content = initial_content.replace('"', '\\"') if initial_content else ""
+        escaped_content = (
+            initial_content.replace("\\", "\\\\").replace('"', '\\"')
+            if initial_content
+            else ""
+        )
         get_buffer_cmd = f"""
           (progn
               (setq buf (generate-new-buffer "*journal*"))
@@ -36,6 +40,7 @@ class Editor:
                   (setq create-lockfiles nil)
                   (display-line-numbers-mode)
                   (insert "{escaped_content}")
+                  (goto-char (point-min))
                   ;; Add word count in mode line with live updates
                   (setq mode-line-format
                       (list
