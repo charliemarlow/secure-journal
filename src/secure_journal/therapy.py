@@ -1,7 +1,11 @@
+"""LLM integration to power therapy responses for journal entries."""
+
 from openai import OpenAI
 
 
 class TherapySession:
+    """Class to analyze journal entries and provide therapeutic responses."""
+
     def __init__(self) -> None:
         """Initialize therapy session with optional OpenAI client."""
         self.client = OpenAI(
@@ -10,7 +14,7 @@ class TherapySession:
         )
 
     def analyze_entry(self, entry_content: str) -> str | None:
-        # Stream the therapy response
+        """Analyze the entry using deepseek-r1 model."""
         try:
             response = self.client.chat.completions.create(
                 model="deepseek-r1",
@@ -28,6 +32,7 @@ class TherapySession:
             return None
 
     def prompt(self, entry_content: str) -> str:
+        """Generate a therapy prompt based on a journal entry."""
         return f"""You are a perceptive, direct therapist engaging with
 someone through their journal entry.
 

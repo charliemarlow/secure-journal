@@ -1,3 +1,8 @@
+"""Core functionality for the secure journaling utility.
+
+Orchestrates the encryption, editing, and therapy analysis of journal entries.
+"""
+
 import time
 from pathlib import Path
 

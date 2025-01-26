@@ -1,3 +1,5 @@
+"""Emacs integration."""
+
 import shutil
 import subprocess
 import time
@@ -6,6 +8,8 @@ ERROR_EMACS_NOT_FOUND = "Emacs not found in PATH"
 
 
 class Editor:
+    """Handles the interaction with the Emacs editor."""
+
     def __init__(self) -> None:
         """Initialize the Emacs editor."""
         emacsclient_path = shutil.which("emacsclient")
@@ -36,6 +40,10 @@ class Editor:
             time.sleep(1)
 
     def open_buffer(self, initial_content: str | None) -> str:
+        """Open an Emacs buffer for editing.
+
+        Does not return until the buffer is closed in Emacs.
+        """
         escaped_content = (
             initial_content.replace("\\", "\\\\").replace('"', '\\"')
             if initial_content

@@ -1,3 +1,5 @@
+"""Logic for encryption and password management of the journal."""
+
 import base64
 import json
 import os

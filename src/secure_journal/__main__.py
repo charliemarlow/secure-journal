@@ -1,3 +1,5 @@
+"""Entry point for secure-journal CLI."""
+
 import argparse
 import getpass
 import sys
@@ -6,7 +8,7 @@ from .journal import SecureJournal
 
 
 def main() -> None:
-    """Main entry point for the secure journal utility."""
+    """Parse CLI arguments and route them to journal functionality."""
     parser = argparse.ArgumentParser(description="Secure journaling utility")
     parser.add_argument("directory", help="Journal directory")
     parser.add_argument("--read", help="Read specific entry by filename")
