@@ -1,4 +1,3 @@
-# src/secure_journal/journal.py
 import json
 import subprocess
 import time
@@ -57,7 +56,21 @@ class SecureJournal:
                 (setq buffer-file-name nil)
                 (setq auto-save-default nil)
                 (setq make-backup-files nil)
-                (setq create-lockfiles nil))
+                (setq create-lockfiles nil)
+                (display-line-numbers-mode)
+                ;; Add word count in mode line with live updates
+                (setq mode-line-format
+                    (list
+                        " "
+                        mode-line-buffer-identification
+                        "   Words: "
+                        '(:eval (number-to-string (count-words (point-min) (point-max))))
+                    ))
+                ;; Force mode line update after any change
+                (add-hook 'after-change-functions
+                    (lambda (&rest _) 
+                        (force-mode-line-update))
+                    nil t))
             (buffer-name buf))
         """
 
@@ -121,10 +134,7 @@ class SecureJournal:
 
         try:
             encrypted_content = entry_path.read_bytes()
-            decrypted_content = self.crypto.decrypt(
-                encrypted_content,
-                password,
-            )
+            decrypted_content = self.crypto.decrypt(encrypted_content, password)
 
             self._start_emacs_server()
 
@@ -137,9 +147,6 @@ class SecureJournal:
                 (not-modified))
             """
 
-            subprocess.run(
-                ["emacsclient", "-c", "--eval", eval_cmd],
-                check=True,
-            )
+            subprocess.run(["emacsclient", "-c", "--eval", eval_cmd], check=True)
         except Exception as e:
             print(f"Error reading entry: {e}")
