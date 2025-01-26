@@ -1,9 +1,9 @@
-import json
-import subprocess
 import time
 from pathlib import Path
 
 from .crypto import JournalCrypto
+from .editor import Editor
+from .therapy import TherapySession
 
 
 class SecureJournal:
@@ -18,23 +18,8 @@ class SecureJournal:
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.crypto = JournalCrypto(self.directory)
-
-    def _start_emacs_server(self) -> None:
-        """Start Emacs server if not already running."""
-        try:
-            # Check if server is running
-            subprocess.run(
-                ["emacsclient", "--eval", "t"], check=True, capture_output=True
-            )
-        except subprocess.CalledProcessError:
-            # Start server if not running
-            subprocess.Popen(
-                ["emacs", "--daemon"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            # Wait for server to start
-            time.sleep(1)
+        self.therapy = TherapySession()
+        self.editor = Editor()
 
     def create_entry(self, password: str) -> None:
         """Create a new journal entry.
@@ -46,64 +31,7 @@ class SecureJournal:
             print("Incorrect password for this journal directory")
             return
 
-        self._start_emacs_server()
-
-        # Create new buffer in Emacs and get its name
-        get_buffer_cmd = """
-        (progn
-            (setq buf (generate-new-buffer "*journal*"))
-            (with-current-buffer buf
-                (setq buffer-file-name nil)
-                (setq auto-save-default nil)
-                (setq make-backup-files nil)
-                (setq create-lockfiles nil)
-                (display-line-numbers-mode)
-                ;; Add word count in mode line with live updates
-                (setq mode-line-format
-                    (list
-                        " "
-                        mode-line-buffer-identification
-                        "   Words: "
-                        '(:eval (number-to-string (count-words (point-min) (point-max))))
-                    ))
-                ;; Force mode line update after any change
-                (add-hook 'after-change-functions
-                    (lambda (&rest _) 
-                        (force-mode-line-update))
-                    nil t))
-            (buffer-name buf))
-        """
-
-        result = subprocess.run(
-            ["emacsclient", "--eval", get_buffer_cmd],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        buffer_name = result.stdout.strip().strip('"')
-
-        # Open buffer in Emacs
-        subprocess.run(
-            ["emacsclient", "-c", "--eval", f'(switch-to-buffer "{buffer_name}")'],
-            check=True,
-        )
-
-        # Get buffer content after editing
-        get_content_cmd = f"""
-        (with-current-buffer "{buffer_name}"
-            (prog1
-                (buffer-string)
-                (kill-buffer)))
-        """
-
-        result = subprocess.run(
-            ["emacsclient", "--eval", get_content_cmd],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        content = result.stdout.strip().strip('"')
+        content = self.editor.open_buffer(None)
         if content and content != "nil":
             # Generate filename with timestamp
             timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -136,17 +64,50 @@ class SecureJournal:
             encrypted_content = entry_path.read_bytes()
             decrypted_content = self.crypto.decrypt(encrypted_content, password)
 
-            self._start_emacs_server()
+            updated_content = self.editor.open_buffer(decrypted_content)
 
-            # Create new read-only buffer with content
-            eval_cmd = f"""
-            (progn
-                (switch-to-buffer (generate-new-buffer "*journal-read*"))
-                (insert {json.dumps(decrypted_content)})
-                (read-only-mode)
-                (not-modified))
-            """
-
-            subprocess.run(["emacsclient", "-c", "--eval", eval_cmd], check=True)
+            if updated_content != decrypted_content:
+                reencrypted_content = self.crypto.encrypt(updated_content, password)
+                entry_path.write_bytes(reencrypted_content)
+                print(f"Entry {filename} updated and saved")
+            else:
+                print("Entry not modified")
         except Exception as e:
             print(f"Error reading entry: {e}")
+
+    def request_therapy(self, entry_filename: str, password: str) -> None:
+        """Request therapy analysis of a specific entry.
+
+        Args:
+            entry_filename: Name of the entry file to analyze
+            password: Encryption password
+        """
+        if not self.crypto.verify_password(password):
+            print("Incorrect password for this journal directory")
+            return
+
+        entry_path = self.directory / entry_filename
+        if not entry_path.exists():
+            print(f"Entry {entry_filename} not found")
+            return
+
+        try:
+            # Decrypt the entry
+            encrypted_content = entry_path.read_bytes()
+            print("Decrypting entry...")
+            content = self.crypto.decrypt(encrypted_content, password)
+            print("Analyzing entry with AI therapist...")
+            # Stream therapy response to editable buffer
+            result = self.therapy.analyze_entry(content)
+
+            final_content = result.strip()
+            if final_content:
+                # Save the edited content
+                timestamp = time.strftime("%Y%m%d_%H%M%S")
+                therapy_file = self.directory / f"{timestamp}_therapy.enc"
+                encrypted_response = self.crypto.encrypt(final_content, password)
+                therapy_file.write_bytes(encrypted_response)
+                print(f"\nTherapy response saved as {therapy_file.name}")
+
+        except Exception as e:
+            print(f"Error generating therapy response: {e}")

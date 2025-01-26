@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description="Secure journaling utility")
     parser.add_argument("directory", help="Journal directory")
     parser.add_argument("--read", help="Read specific entry by filename")
+    parser.add_argument("--therapy", help="Use deepseek to analyze the entry")
     args = parser.parse_args()
 
     journal = SecureJournal(args.directory)
@@ -19,6 +20,8 @@ def main():
 
         if args.read:
             journal.read_entry(args.read, password)
+        elif args.therapy:
+            journal.request_therapy(args.therapy, password)
         else:
             journal.create_entry(password)
     except KeyboardInterrupt:
