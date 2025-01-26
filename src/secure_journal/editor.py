@@ -49,6 +49,7 @@ class Editor:
             if initial_content
             else ""
         )
+
         get_buffer_cmd = f"""
           (progn
               (setq buf (generate-new-buffer "*journal*"))
@@ -60,14 +61,32 @@ class Editor:
                   (display-line-numbers-mode)
                   (insert "{escaped_content}")
                   (goto-char (point-min))
-                  ;; Add word count in mode line with live updates
+                  ;; Add word count and progress bar in mode line
+                  ;; with live updates
                   (setq mode-line-format
                       (list
                           " "
                           mode-line-buffer-identification
                           "   Words: "
-                          '(:eval (number-to-string '
-                          (count-words (point-min) (point-max))))
+                          '(:eval
+                            (number-to-string
+                              (count-words (point-min) (point-max))))
+                          "/"
+                          "1000"
+                          " ["
+                          '(:eval
+                            (let*
+                              ((words (count-words (point-min) (point-max)))
+                                       (percentage
+                                        (min 100
+                                          (* 100 (/ (float words) 1000))))
+                                       (filled (floor (/ percentage 5)))
+                                       (empty (- 20 filled)))
+                                  (concat (make-string filled ?#)
+                                        (make-string empty ?-)
+                                        " "
+                                        (format "%.1f%%%%" percentage))))
+                          "]"
                       ))
                   ;; Force mode line update after any change
                   (add-hook 'after-change-functions
