@@ -41,6 +41,8 @@ class SecureJournal:
             encrypted_content = self.crypto.encrypt(content, password)
             encrypted_file.write_bytes(encrypted_content)
             print(f"Entry saved as {encrypted_file.name}")
+
+            self.request_therapy(encrypted_file.name, password)
         else:
             print("No content written, entry discarded")
 
@@ -66,12 +68,8 @@ class SecureJournal:
 
             updated_content = self.editor.open_buffer(decrypted_content)
 
-            if updated_content != decrypted_content:
-                reencrypted_content = self.crypto.encrypt(updated_content, password)
-                entry_path.write_bytes(reencrypted_content)
-                print(f"Entry {filename} updated and saved")
-            else:
-                print("Entry not modified")
+            reencrypted_content = self.crypto.encrypt(updated_content, password)
+            entry_path.write_bytes(reencrypted_content)
         except Exception as e:
             print(f"Error reading entry: {e}")
 
@@ -100,7 +98,7 @@ class SecureJournal:
             # Stream therapy response to editable buffer
             result = self.therapy.analyze_entry(content)
 
-            final_content = result.strip()
+            final_content = self.editor.open_buffer(result)
             if final_content:
                 # Save the edited content
                 timestamp = time.strftime("%Y%m%d_%H%M%S")
