@@ -18,3 +18,18 @@ build-backend = "hatchling.build"
 
 readme = "README.md"
 license = { text = "MIT" }
+
+[tool.ruff]
+# Enable all rules by default
+select = ["ALL"]
+
+line-length = 80
+ignore = [
+  "T201", # print statements
+  "BLE001", # Blind exceptions
+  "D", # Documentation errors
+  "S603", # subprocess call - check for execution of untrusted input
+]
+
+[tool.ruff.format]
+quote-style = "double"

@@ -9,11 +9,12 @@ from .therapy import TherapySession
 class SecureJournal:
     """A secure journaling utility that integrates with Emacs."""
 
-    def __init__(self, directory: str | Path):
+    def __init__(self, directory: str | Path) -> None:
         """Initialize a secure journal in the specified directory.
 
         Args:
             directory: Path to the journal directory
+
         """
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -26,6 +27,7 @@ class SecureJournal:
 
         Args:
             password: The password to encrypt the entry with
+
         """
         if not self.crypto.verify_password(password):
             print("Incorrect password for this journal directory")
@@ -52,6 +54,7 @@ class SecureJournal:
         Args:
             filename: Name of the encrypted file to read
             password: The password to decrypt the entry with
+
         """
         if not self.crypto.verify_password(password):
             print("Incorrect password for this journal directory")
@@ -64,11 +67,17 @@ class SecureJournal:
 
         try:
             encrypted_content = entry_path.read_bytes()
-            decrypted_content = self.crypto.decrypt(encrypted_content, password)
+            decrypted_content = self.crypto.decrypt(
+                encrypted_content,
+                password,
+            )
 
             updated_content = self.editor.open_buffer(decrypted_content)
 
-            reencrypted_content = self.crypto.encrypt(updated_content, password)
+            reencrypted_content = self.crypto.encrypt(
+                updated_content,
+                password,
+            )
             entry_path.write_bytes(reencrypted_content)
         except Exception as e:
             print(f"Error reading entry: {e}")
@@ -79,6 +88,7 @@ class SecureJournal:
         Args:
             entry_filename: Name of the entry file to analyze
             password: Encryption password
+
         """
         if not self.crypto.verify_password(password):
             print("Incorrect password for this journal directory")
@@ -90,12 +100,9 @@ class SecureJournal:
             return
 
         try:
-            # Decrypt the entry
             encrypted_content = entry_path.read_bytes()
-            print("Decrypting entry...")
             content = self.crypto.decrypt(encrypted_content, password)
             print("Analyzing entry with AI therapist...")
-            # Stream therapy response to editable buffer
             result = self.therapy.analyze_entry(content)
 
             final_content = self.editor.open_buffer(result)
@@ -103,7 +110,10 @@ class SecureJournal:
                 # Save the edited content
                 timestamp = time.strftime("%Y%m%d_%H%M%S")
                 therapy_file = self.directory / f"{timestamp}_therapy.enc"
-                encrypted_response = self.crypto.encrypt(final_content, password)
+                encrypted_response = self.crypto.encrypt(
+                    final_content,
+                    password,
+                )
                 therapy_file.write_bytes(encrypted_response)
                 print(f"\nTherapy response saved as {therapy_file.name}")
 

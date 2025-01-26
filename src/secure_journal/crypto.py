@@ -11,11 +11,12 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 class JournalCrypto:
     """Handles encryption and password management for the journal."""
 
-    def __init__(self, directory: Path):
+    def __init__(self, directory: Path) -> None:
         """Initialize crypto manager for a journal directory.
 
         Args:
             directory: Path to the journal directory
+
         """
         self.directory = directory
         self.salt_file = directory / ".salt"
@@ -27,13 +28,13 @@ class JournalCrypto:
 
         Returns:
             bytes: The salt used for key derivation
+
         """
         if self.salt_file.exists():
             return self.salt_file.read_bytes()
-        else:
-            salt = os.urandom(16)
-            self.salt_file.write_bytes(salt)
-            return salt
+        salt = os.urandom(16)
+        self.salt_file.write_bytes(salt)
+        return salt
 
     def _generate_key(self, password: str) -> Fernet:
         """Generate encryption key from password using PBKDF2.
@@ -43,6 +44,7 @@ class JournalCrypto:
 
         Returns:
             Fernet: The encryption/decryption object
+
         """
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -61,6 +63,7 @@ class JournalCrypto:
 
         Returns:
             bool: True if password is correct
+
         """
         if not self.config_file.exists():
             # First time setup - save a test value
@@ -73,9 +76,10 @@ class JournalCrypto:
         fernet = self._generate_key(password)
         try:
             fernet.decrypt(config["test"].encode())
-            return True
         except Exception:
             return False
+        else:
+            return True
 
     def encrypt(self, content: str, password: str) -> bytes:
         """Encrypt content with the given password.
@@ -86,6 +90,7 @@ class JournalCrypto:
 
         Returns:
             bytes: Encrypted content
+
         """
         fernet = self._generate_key(password)
         return fernet.encrypt(content.encode())
@@ -102,6 +107,7 @@ class JournalCrypto:
 
         Raises:
             cryptography.fernet.InvalidToken: If decryption fails
+
         """
         fernet = self._generate_key(password)
         return fernet.decrypt(encrypted_content).decode()
